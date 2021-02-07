@@ -15,7 +15,7 @@ typedef OnProcessCallback = function bool(KeyValues kv, File hFile, const char[]
 	_benchmark.Stop(); \
 	elapsed = _benchmark.Time; \ 
 	delete _benchmark; \
-	PrintToServer("%s (%.12f s)", %0, elapsed)
+	PrintToServer("(elapsed: %.12f second) %s", elapsed, %0)
 
 
 enum struct KVAndPath
@@ -30,17 +30,17 @@ methodmap FF2ConfigList_ < ArrayList
 	{
 		char path[PLATFORM_MAX_PATH];
 		BuildPath(Path_SM, path, PLATFORM_MAX_PATH, PATH_TO_CFG);
-		
+
 		if (!DirExists(path))
 			SetFailState("Failed to open Directory: \"%s\"", PATH_TO_CFG);
-		
+
 		DirectoryListing Dir = OpenDirectory(path);
-		
+
 		ArrayList FileList = new ArrayList(sizeof(KVAndPath));
 		_RecursiveOpenFile(Dir, FileList);
 		if (!FileList.Length)
 			SetFailState("No boss was found in %s", PATH_TO_CFG);
-		
+
 		return view_as<FF2ConfigList_>(FileList);
 	}
 	
@@ -76,19 +76,19 @@ methodmap FF2AutoProcess < ArrayList
 	{
 		return view_as<FF2AutoProcess>(new ArrayList(sizeof(Function_t)));
 	}
-	
+
 	public void Register(OnProcessCallback callback, const char[] str, FF2GetKeyType type, int extra = 0)
 	{
 		Function_t f;
-		
+
 		strcopy(f.str, sizeof(Function_t::str), str);
 		f.fn = callback;
 		f.type = type;
 		f.extra = extra;
-		
+
 		this.PushArray(f);
 	}
-	
+
 	public Function GetFunction(const char[] incoming)
 	{
 		Function_t f;
@@ -117,7 +117,7 @@ methodmap FF2AutoProcess < ArrayList
 		}
 		return INVALID_FUNCTION;
 	}
-	
+
 	public bool ProcessOne(KeyValues kv, File hFile, const char[] incoming)
 	{
 		bool res;
@@ -140,7 +140,7 @@ enum struct FF2Utility
 	FF2ConfigList_ cfg_list;
 	int size_of_list;
 	FF2AutoProcess proc;
-	
+
 	void FreeAll()
 	{
 		delete this.proc;
@@ -156,17 +156,17 @@ public void OnPluginStart()
 	ff2u.cfg_list = new FF2ConfigList_();
 	ff2u.proc = new FF2AutoProcess();
 	ff2u.size_of_list = ff2u.cfg_list.Length;
-	
-	
+
+
 	ff2u.proc.Register(OnProcessAbility, "ability", AsStrNCmp, 7);
-	
+
 	char keys[][] = {
 		"download",
 		"_precache",
 		"sound_",
 		"catch_"
 	};
-	
+
 	for (int i; i < sizeof(keys); i++)
 		ff2u.proc.Register(OnProcessGenerics, keys[i], AsStrStr);
 
@@ -181,21 +181,21 @@ Action Schedule_WriteConfigs(Handle timer, int current)
 		CreateTimer(0.1, Schedule_FinishCharacters, 0);
 		return Plugin_Continue;
 	}
-	
+
 	KVAndPath data;
-	
+
 	ff2u.cfg_list.GetArray(current, data);
 	KeyValues kv = data.kv;
 	File hFile = OpenFile(data.path, "wt");
-	
+
 	BEGIN_PROF_SECTION();
 
 	_RecursiveProcessSection(kv, hFile);
-	
+
 	END_PROF_SECTION(data.path);
-	
+
 	hFile.Close();
-	
+
 	CreateTimer(0.1, Schedule_WriteConfigs, current + 1);
 	return Plugin_Continue;
 }
@@ -203,17 +203,17 @@ Action Schedule_WriteConfigs(Handle timer, int current)
 Action Schedule_FinishCharacters(Handle timer)
 {
 	KeyValues kv = new KeyValues("");
-	
+
 	char path[PLATFORM_MAX_PATH];
 	BuildPath(Path_SM, path, sizeof(path), "data/freak_fortress_2/characters.cfg");
 	kv.ImportFromFile(path);
-	
+
 	File hFile = OpenFile(path, "wt");
-	
+
 	BEGIN_PROF_SECTION();
-	
+
 	_RecursiveChangeSectionName(kv, hFile);
-	
+
 	END_PROF_SECTION("Characters.cfg");
 
 	hFile.Close();
@@ -224,22 +224,22 @@ void _RecursiveChangeSectionName(KeyValues kv, File hFile, int deep = 0)
 {
 	char[] tabs = new char[deep];
 	for(int i; i < deep; i++) tabs[i] = '\t';
-	
+
 	char[] val = new char[512];
 	char section[64];
-	
+
 	do
 	{
 		kv.GetSectionName(section, sizeof(section));
-		
+
 		if (kv.GotoFirstSubKey(false))
 		{
 			hFile.WriteLine("%s\"%s\"\n%s{", tabs, section, tabs);
-			
+
 			_RecursiveChangeSectionName(kv, hFile, deep + 1);
-			
+
 			kv.GoBack();
-			
+
 			hFile.WriteLine("%s}", tabs);
         }
 		else
@@ -247,7 +247,7 @@ void _RecursiveChangeSectionName(KeyValues kv, File hFile, int deep = 0)
 			if (kv.GetDataType(NULL_STRING))
 			{
 				kv.GetString(NULL_STRING, val, 512);
-				
+
 				hFile.WriteLine("%s\"<enum>\"\t\"%s\"", tabs, val);
 			}
 			else
@@ -263,14 +263,14 @@ void _RecursiveProcessSection(KeyValues kv, File hFile, int deep = 0)
 {
 	char[] tabs = new char[deep];
 	for(int i; i < deep; i++) tabs[i] = '\t';
-	
+
 	char[] val = new char[512];
 	char section[64];
-	
+
 	do
 	{
 		kv.GetSectionName(section, sizeof(section));
-		
+
 		if (!kv.GetDataType(NULL_STRING) && ff2u.proc.ProcessOne(kv, hFile, section))
 		{
 //			_RecursiveProcessSection(kv, hFile, deep + 1);
@@ -280,11 +280,11 @@ void _RecursiveProcessSection(KeyValues kv, File hFile, int deep = 0)
 		else if (kv.GotoFirstSubKey(false))
 		{
 			hFile.WriteLine("%s\"%s\"\n%s{", tabs, section, tabs);
-			
+
 			_RecursiveProcessSection(kv, hFile, deep + 1);
-			
+
 			kv.GoBack();
-			
+
 			hFile.WriteLine("%s}", tabs);
         }
 		else
@@ -293,7 +293,7 @@ void _RecursiveProcessSection(KeyValues kv, File hFile, int deep = 0)
 			{
 				kv.GetSectionName(section, sizeof(section));
 				kv.GetString(NULL_STRING, val, 512);
-				
+
 				hFile.WriteLine("%s\"%s\"\t\"%s\"", tabs, section, val);
 			}
 			else
@@ -309,7 +309,7 @@ void _RecursiveOpenFile(DirectoryListing Dir, ArrayList& List)
 {
 	KVAndPath data;
 	FileType ft;
-	
+
 	while (Dir.GetNext(data.path, sizeof(KVAndPath::path), ft))
 	{
 		switch (ft)
@@ -363,46 +363,44 @@ FF2CallType_t Num_To_Slot(int slot)
 	/**
 	 * -2 - Invalid slot(internally used by FF2 for detecting missing "arg0" argument). Don't use!
 	 * -1 - When Boss loses a life (if he has over 1)
-     * 0 - Rage
-     * 1 - Used by charging brave Jump. Fired every 0.2s
-     * 2 - Demopan's charge of targe, projectiles etc.
-     * 3 - Weighdown
-     * 4 - Killed player (not used for sounds)
-     * 5 - Boss killed (not used for sounds)
-     * 6 - Boss backstabbed (not used for sounds)
-     * 7 - Boss market gardened (not used for sounds)
-     */
+     	 * 0 - Rage
+    	 * 1 - Used by charging brave Jump. Fired every 0.2s
+    	 * 2 - Demopan's charge of targe, projectiles etc.
+    	 * 3 - Weighdown
+    	 * 4 - Killed player (not used for sounds)
+    	 * 5 - Boss killed (not used for sounds)
+    	 * 6 - Boss backstabbed (not used for sounds)
+    	 * 7 - Boss market gardened (not used for sounds)
+    	 */
 	switch (slot)
-    {
-    case -2, 2: {
-		 // 2, -2 or anything else should never be used unless you're calling with FF2Player.ForceAbility
-        return CT_UNUSED_DEMO;
+	{
+ 	case -2, 2: {
+	// 2, -2 should never be used unless you're calling with FF2Player.ForceAbility
+	return CT_UNUSED_DEMO;
 	}
 	case -1: return CT_LIFE_LOSS;
-    case 1: return CT_CHARGE;
+	case 1: return CT_CHARGE;
 	case 0: return CT_RAGE;
-	
+
 //	case 3, 4, 5, 6, 7:
 	default: {
 		return view_as<FF2CallType_t>(1 << (1 + slot));
 	}
-	
-	
 	}
 }
 
 bool OnProcessAbility(KeyValues kv, File hFile, const char[] section_name)
 {
 	const int bad_results = -999;
-	
+
 	if (kv.GetNum("__update_slot__", 0))
 	{
 		return false;
 	}
-	
+
 	bool is_using_old = false;
 	int val;
-	
+
 	if ((val = kv.GetNum("slot", bad_results)) == bad_results)
 	{
 		if ((val = kv.GetNum("arg0", bad_results)) == bad_results)
@@ -413,13 +411,13 @@ bool OnProcessAbility(KeyValues kv, File hFile, const char[] section_name)
 		}
 		else is_using_old = true;
 	}
-	
+
 	char str[32];
 	Format(str, sizeof(str), "%b", view_as<int>(Num_To_Slot(val)));
 	
 	kv.SetString(is_using_old ? "arg0" : "slot", str);
 	kv.SetNum("__update_slot__", 1);
-	
+
 	return false;
 }
 
@@ -442,14 +440,14 @@ bool OnProcessGenerics(KeyValues kv, File hFile, const char[] section_name)
 	{
 		char key[8];
 		int count = -1;
-		
+
 		do
 		{
 			kv.GetString(NULL_STRING, val, 480);
 			kv.GetSectionName(key, sizeof(key));
-			
+
 			bool use_key_as_str;
-			
+
 			if (key[0] == 's')			//slot<enum>
 			{
 				use_key_as_str = true;
@@ -462,7 +460,7 @@ bool OnProcessGenerics(KeyValues kv, File hFile, const char[] section_name)
 				Format(key, sizeof(key), "vo%i", count);
 			}
 			else count++;
-			
+
 			hFile.WriteLine("\t\t\"%s\"\t\"%s\"", use_key_as_str ? key : "<enum>", val);
 		} while (kv.GotoNextKey(false));
 	}
@@ -474,7 +472,7 @@ bool OnProcessGenerics(KeyValues kv, File hFile, const char[] section_name)
 			hFile.WriteLine("\t\t\"<enum>\"\t\"%s\"", val);
 		} while (kv.GotoNextKey(false));
 	}
-	
+
 	hFile.WriteLine("\t}");
 	return true;
 }
