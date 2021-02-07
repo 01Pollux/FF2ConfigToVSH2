@@ -414,7 +414,7 @@ bool OnProcessAbility(KeyValues kv, File hFile, const char[] section_name)
 
 	char str[32];
 	Format(str, sizeof(str), "%b", view_as<int>(Num_To_Slot(val)));
-	
+
 	kv.SetString(is_using_old ? "arg0" : "slot", str);
 	kv.SetNum("__update_slot__", 1);
 
@@ -429,13 +429,17 @@ bool OnProcessAbility(KeyValues kv, File hFile, const char[] section_name)
  * Replace old enumeration with "<enum>" key
  *
  */
+
 bool OnProcessGenerics(KeyValues kv, File hFile, const char[] section_name)
 {
+	if (!strcmp(section_name, "sound_bgm"))
+		return false;
+
 	char[] val = new char[480];
-	
+
 	kv.GotoFirstSubKey(false);
 	hFile.WriteLine("\t\"%s\"\n\t{", section_name);
-	
+
 	if (!strcmp(section_name, "sound_ability") || !strncmp(section_name, "catch_", 6))
 	{
 		char key[8];
@@ -448,7 +452,7 @@ bool OnProcessGenerics(KeyValues kv, File hFile, const char[] section_name)
 
 			bool use_key_as_str;
 
-			if (key[0] == 's')			//slot<enum>
+			if (key[0] == 's')		//slot<enum>
 			{
 				use_key_as_str = true;
 				Format(key, sizeof(key), "slot%i", count);
@@ -464,7 +468,7 @@ bool OnProcessGenerics(KeyValues kv, File hFile, const char[] section_name)
 			hFile.WriteLine("\t\t\"%s\"\t\"%s\"", use_key_as_str ? key : "<enum>", val);
 		} while (kv.GotoNextKey(false));
 	}
-	else
+	else 
 	{
 		do
 		{
