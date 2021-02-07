@@ -105,12 +105,12 @@ methodmap FF2AutoProcess < ArrayList
 				}
 				case AsStrNCmp:
 				{
-					if (!strncmp(incoming, f.str, f.extra))
+					if (!strncmp(incoming, f.str, f.extra, false))
 						return f.fn;
 				}
 				case AsStrCmp:
 				{
-					if (strcmp(incoming, f.str) == f.extra)
+					if (strcmp(incoming, f.str, false) == f.extra)
 						return f.fn;
 				}
 			}
