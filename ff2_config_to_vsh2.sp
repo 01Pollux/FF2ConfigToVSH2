@@ -327,7 +327,7 @@ void _RecursiveOpenFile(DirectoryListing Dir, ArrayList& List)
 			}
 			case FileType_Directory: 
 			{
-				if (!StrContains(data.path, ".")) continue;
+				if (data.path[0] == '.') continue;
 				_RecursiveOpenFile(OpenDirectory(data.path), List);
 			}
 		}
