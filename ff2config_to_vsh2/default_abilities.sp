@@ -49,7 +49,9 @@ methodmap FF2SingleAbility < FF2DefaultsToVSH2
 		char[] incoming = new char[64];
 		kv.GetString("name", incoming, 64);
 		Function fn = this.GetFunction(incoming);
-
+		
+		
+		PrintToServer("Incoming: %s", incoming);
 		if (fn != INVALID_FUNCTION)
 		{
 			Call_StartFunction(null, fn);
@@ -75,22 +77,22 @@ void Defaults_OnPluginStart()
 ///	check https://github.com/01Pollux/FF2-Library/wiki/FF2-Default-Abilities for more infos
 #define FAST_REG(%0)(%1) _ff2_abilities.Register(%0, #%0, %1)
 
-	FAST_REG(rage_cbs_bowrage)(AsStrCmpi);
-	FAST_REG(rage_cloneattack)(AsStrCmpi);
-	FAST_REG(rage_explosive_dance)(AsStrCmpi);
-	FAST_REG(rage_instant_teleport)(AsStrCmpi);
-	FAST_REG(rage_matrix_attack)(AsStrCmpi);
-	FAST_REG(rage_new_weapon)(AsStrCmpi);
-	FAST_REG(rage_overlay)(AsStrCmpi);
-	FAST_REG(rage_stun)(AsStrCmpi);
-	FAST_REG(rage_stunsg)(AsStrCmpi);
-	FAST_REG(rage_uber)(AsStrCmpi);
-	FAST_REG(special_democharge)(AsStrCmpi);
-	FAST_REG(model_projectile_replace)(AsStrCmpi);
+	FAST_REG(rage_cbs_bowrage)			 (AsStrCmpi);
+	FAST_REG(rage_cloneattack)			 (AsStrCmpi);
+	FAST_REG(rage_explosive_dance)		 (AsStrCmpi);
+	FAST_REG(rage_instant_teleport)		 (AsStrCmpi);
+	FAST_REG(rage_matrix_attack)		 (AsStrCmpi);
+	FAST_REG(rage_new_weapon)			 (AsStrCmpi);
+	FAST_REG(rage_overlay)				 (AsStrCmpi);
+	FAST_REG(rage_stun)					 (AsStrCmpi);
+	FAST_REG(rage_stunsg)				 (AsStrCmpi);
+	FAST_REG(rage_uber)					 (AsStrCmpi);
+	FAST_REG(special_democharge)		 (AsStrCmpi);
+	FAST_REG(model_projectile_replace)	 (AsStrCmpi);
 	FAST_REG(spawn_many_objects_on_death)(AsStrCmpi);
-	FAST_REG(special_cbs_multimelee)(AsStrCmpi);
-	FAST_REG(special_noanims)(AsStrCmpi);
-	FAST_REG(special_dropprop)(AsStrCmpi);
+	FAST_REG(special_cbs_multimelee)	 (AsStrCmpi);
+	FAST_REG(special_noanims)			 (AsStrCmpi);
+	FAST_REG(special_dropprop)			 (AsStrCmpi);
 }
 
 
@@ -341,7 +343,6 @@ static void rage_stunsg(KeyValues kv)
 
 static void rage_uber(KeyValues kv)
 {
-	PrintToServer("Rage Uber");
 	float val;
 	if ((val = kv.GetFloat("arg1", -999.0)) != -999.0)
 		kv.SetFloat("duration", val);
@@ -432,25 +433,6 @@ static void special_cbs_multimelee(KeyValues kv)
 	kv.GetString("arg1", val, 240);
 	if (val[0])
 		kv.SetString("attributes", val);
-}
-
-static void special_noanims(KeyValues kv)
-{
-	char[] val = new char[240];
-	char keys[][] = {
-		"model",			// 1
-		"duration",			// 2
-		"remove ragdolls",	// 3
-	};
-
-	char lame[8];
-	for (int i = 1; i < sizeof(keys); i++)
-	{
-		FormatEx(lame, sizeof(lame), "arg%i", i);
-		kv.GetString(lame, val, 240);
-		if (val[0])
-			kv.SetString(keys[i], val);
-	}
 }
 
 static void special_dropprop(KeyValues kv)
