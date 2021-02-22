@@ -40,6 +40,7 @@ void DummyFunction() { }	/// for	empty statements warning
 #define END_PROF_SECTION(%0) DummyFunction()
 #endif
 
+public Plugin myinfo = { name = "01Pollux" };
 
 enum struct KVAndPath
 {

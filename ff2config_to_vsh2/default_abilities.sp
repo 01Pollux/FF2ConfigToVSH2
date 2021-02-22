@@ -50,8 +50,6 @@ methodmap FF2SingleAbility < FF2DefaultsToVSH2
 		kv.GetString("name", incoming, 64);
 		Function fn = this.GetFunction(incoming);
 		
-		
-		PrintToServer("Incoming: %s", incoming);
 		if (fn != INVALID_FUNCTION)
 		{
 			Call_StartFunction(null, fn);
