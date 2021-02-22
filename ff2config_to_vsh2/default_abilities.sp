@@ -75,12 +75,22 @@ void Defaults_OnPluginStart()
 ///	check https://github.com/01Pollux/FF2-Library/wiki/FF2-Default-Abilities for more infos
 #define FAST_REG(%0)(%1) _ff2_abilities.Register(%0, #%0, %1)
 
-///	TODO LATER
 	FAST_REG(rage_cbs_bowrage)(AsStrCmpi);
 	FAST_REG(rage_cloneattack)(AsStrCmpi);
 	FAST_REG(rage_explosive_dance)(AsStrCmpi);
+	FAST_REG(rage_instant_teleport)(AsStrCmpi);
+	FAST_REG(rage_matrix_attack)(AsStrCmpi);
+	FAST_REG(rage_new_weapon)(AsStrCmpi);
+	FAST_REG(rage_overlay)(AsStrCmpi);
+	FAST_REG(rage_stun)(AsStrCmpi);
 	FAST_REG(rage_stunsg)(AsStrCmpi);
 	FAST_REG(rage_uber)(AsStrCmpi);
+	FAST_REG(special_democharge)(AsStrCmpi);
+	FAST_REG(model_projectile_replace)(AsStrCmpi);
+	FAST_REG(spawn_many_objects_on_death)(AsStrCmpi);
+	FAST_REG(special_cbs_multimelee)(AsStrCmpi);
+	FAST_REG(special_noanims)(AsStrCmpi);
+	FAST_REG(special_dropprop)(AsStrCmpi);
 }
 
 
@@ -168,6 +178,119 @@ static void rage_explosive_dance(KeyValues kv)
 	}
 }
 
+static void rage_instant_teleport(KeyValues kv)
+{
+	char[] val = new char[240];
+	char keys[][] = {
+		"stun",		// 1
+		"friendly",	// 2
+		"flags",	// 3
+		"slowdown",	// 4
+		"sound",	// 5
+		"particle",	// 6
+	};
+
+	char lame[8];
+	for (int i = 1; i < sizeof(keys); i++)
+	{
+		FormatEx(lame, sizeof(lame), "arg%i", i);
+		kv.GetString(lame, val, 240);
+		if (val[0])
+			kv.SetString(keys[i], val);
+	}
+}
+
+static void rage_matrix_attack(KeyValues kv)
+{
+	char[] val = new char[240];
+	char keys[][] = {
+		"duration",	// 1
+		"timescale",// 2
+		"delay",	// 3
+	};
+
+	char lame[8];
+	for (int i = 1; i < sizeof(keys); i++)
+	{
+		FormatEx(lame, sizeof(lame), "arg%i", i);
+		kv.GetString(lame, val, 240);
+		if (val[0])
+			kv.SetString(keys[i], val);
+	}
+}
+
+static void rage_new_weapon(KeyValues kv)
+{
+	char[] val = new char[240];
+	char keys[][] = {
+		"weapon slot",	// 1
+		"classname",	// 2
+		"index",		// 3
+		"attributes",	// 4
+		"ammo",			// 5
+		"clip",			// 6
+		"switch",		// 7
+		"level",		// 8
+		"quality",		// 9
+	};
+
+	char lame[8];
+	for (int i = 1; i < sizeof(keys); i++)
+	{
+		FormatEx(lame, sizeof(lame), "arg%i", i);
+		kv.GetString(lame, val, 240);
+		if (val[0])
+			kv.SetString(keys[i], val);
+	}
+}
+
+static void rage_overlay(KeyValues kv)
+{
+	char[] val = new char[240];
+	char keys[][] = {
+		"path",		// 1
+		"duration",	// 2
+	};
+
+	char lame[8];
+	for (int i = 1; i < sizeof(keys); i++)
+	{
+		FormatEx(lame, sizeof(lame), "arg%i", i);
+		kv.GetString(lame, val, 240);
+		if (val[0])
+			kv.SetString(keys[i], val);
+	}
+}
+
+static void rage_stun(KeyValues kv)
+{
+	char[] val = new char[240];
+	char keys[][] = {
+		"duration",	// 1
+		"distance", // 2
+		"flags",	// 3
+		"slowdown",	// 4
+		"sound",	// 5
+		"particle",	// 6
+		"uber",		// 7
+		"friendly",	// 8
+		"basejumper",//9
+		"delay",	// 10
+		"max",		// 11
+		"add",		// 12
+		"solo",		// 13
+	};
+
+	char lame[8];
+	for (int i = 1; i < sizeof(keys); i++)
+	{
+		FormatEx(lame, sizeof(lame), "arg%i", i);
+		kv.GetString(lame, val, 240);
+		if (val[0])
+			kv.SetString(keys[i], val);
+	}
+}
+
 static void rage_stunsg(KeyValues kv)
 {
 	char[] val = new char[240];
@@ -191,10 +314,11 @@ static void rage_stunsg(KeyValues kv)
 			kv.SetString(keys[i], val);
 	}
 	
-	kv.GetString("building", lame, sizeof(lame), "\0\0\0\0");
+	lame = "000";
+	kv.GetString("building", lame, sizeof(lame), "000");
 	
 	char num = lame[0];
-	if (num)
+	if (lame[3])
 	{
 		char nums[][] = {
 			{ '1', '4', '5', '7' },
@@ -203,7 +327,7 @@ static void rage_stunsg(KeyValues kv)
 		};
 		for (int i = 0; i < sizeof(nums); i++)
 		{
-			for (int j = 0; j < 4; j++)
+			for (int j = 0; j < sizeof(nums[]); j++)
 			{
 				if (num == nums[i][j])
 				{
@@ -213,7 +337,6 @@ static void rage_stunsg(KeyValues kv)
 			}
 		}
 	}
-	
 }
 
 static void rage_uber(KeyValues kv)
@@ -222,6 +345,131 @@ static void rage_uber(KeyValues kv)
 	float val;
 	if ((val = kv.GetFloat("arg1", -999.0)) != -999.0)
 		kv.SetFloat("duration", val);
+}
+
+static void special_democharge(KeyValues kv)
+{
+	char[] val = new char[240];
+	char keys[][] = {
+		"duration",	// 1		/// THIS IS UNUSED
+		"cooldown", // 2
+		"delay",	// 3
+		"rage",		// 4
+		"minimum",	// 5
+		"maximum",	// 6
+	};
+
+	char lame[8];
+	for (int i = 1; i < sizeof(keys); i++)
+	{
+		FormatEx(lame, sizeof(lame), "arg%i", i);
+		kv.GetString(lame, val, 240);
+		if (val[0])
+			kv.SetString(keys[i], val);
+	}
+}
+
+static void model_projectile_replace(KeyValues kv)
+{
+	char[] val = new char[240];
+	char keys[][] = {
+		"projectile",	// 1
+		"model",		// 2
+	};
+
+	char lame[8];
+	for (int i = 1; i < sizeof(keys); i++)
+	{
+		FormatEx(lame, sizeof(lame), "arg%i", i);
+		kv.GetString(lame, val, 240);
+		if (val[0])
+			kv.SetString(keys[i], val);
+	}
+}
+
+static void spawn_many_objects_on_death(KeyValues kv)
+{
+	char[] val = new char[240];
+	char keys[][] = {
+		"classname",// 1
+		"model",	// 2
+		"skin",		// 3
+		"amount",	// 4
+		"distance",	// 5
+	};
+
+	char lame[8];
+	for (int i = 1; i < sizeof(keys); i++)
+	{
+		FormatEx(lame, sizeof(lame), "arg%i", i);
+		kv.GetString(lame, val, 240);
+		if (val[0])
+			kv.SetString(keys[i], val);
+	}
+}
+
+static void special_noanims(KeyValues kv)
+{
+	char[] val = new char[240];
+	char keys[][] = {
+		"custom model rotates",		// 1
+		"custom model animation",	// 2
+	};
+
+	char lame[8];
+	for (int i = 1; i < sizeof(keys); i++)
+	{
+		FormatEx(lame, sizeof(lame), "arg%i", i);
+		kv.GetString(lame, val, 240);
+		if (val[0])
+			kv.SetString(keys[i], val);
+	}
+}
+
+static void special_cbs_multimelee(KeyValues kv)
+{
+	char[] val = new char[240];
+	kv.GetString("arg1", val, 240);
+	if (val[0])
+		kv.SetString("attributes", val);
+}
+
+static void special_noanims(KeyValues kv)
+{
+	char[] val = new char[240];
+	char keys[][] = {
+		"model",			// 1
+		"duration",			// 2
+		"remove ragdolls",	// 3
+	};
+
+	char lame[8];
+	for (int i = 1; i < sizeof(keys); i++)
+	{
+		FormatEx(lame, sizeof(lame), "arg%i", i);
+		kv.GetString(lame, val, 240);
+		if (val[0])
+			kv.SetString(keys[i], val);
+	}
+}
+
+static void special_dropprop(KeyValues kv)
+{
+	char[] val = new char[240];
+	char keys[][] = {
+		"model",			// 1
+		"duration",			// 2
+		"remove ragdolls",	// 3
+	};
+
+	char lame[8];
+	for (int i = 1; i < sizeof(keys); i++)
+	{
+		FormatEx(lame, sizeof(lame), "arg%i", i);
+		kv.GetString(lame, val, 240);
+		if (val[0])
+			kv.SetString(keys[i], val);
+	}
 }
 
 #endif ///	FF2_DEFAULTS_TO_VSH2
