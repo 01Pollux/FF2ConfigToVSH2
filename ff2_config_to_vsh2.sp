@@ -1,11 +1,27 @@
 
 #include <profiler>
 
+
+///	show the time it took to process each config
+#define FF2_COMPILE_WITH_BECHMARK
+
+///	forcibly change ffbat_defaults and deault_abilities to ff2_vsh2defaults
+///	yes this also does recreate all of your args with new name just in case
+//#define FF2_DEFAULTS_TO_VSH2
+
+///	set's some enumeration keys with "<enum>"
+#define FF2_USING_CONFIGMAP_ENUMERATION
+
+///	rewrite the old slots with new one, note: it will not rewrite them if the section has "__update_slot__" key set to "1"
+#define FF2_USING_NEW_SLOTS
+
+
 static const char PATH_TO_CFG[] = "configs/freak_fortress_2"
 
 typedef OnProcessCallback = function bool(KeyValues kv, File hFile, const char[] section_name);
 
 
+#if defined FF2_COMPILE_WITH_BECHMARK
 #define BEGIN_PROF_SECTION() \
 	float elapsed;\
 	Profiler _benchmark = new Profiler(); \
@@ -17,6 +33,13 @@ typedef OnProcessCallback = function bool(KeyValues kv, File hFile, const char[]
 	delete _benchmark; \
 	PrintToServer("(elapsed: %.12f second) %s", elapsed, %0)
 
+#else
+void DummyFunction() { }	/// for	empty statements warning
+#define BEGIN_PROF_SECTION() DummyFunction()
+
+#define END_PROF_SECTION(%0) DummyFunction()
+#endif
+
 
 enum struct KVAndPath
 {
@@ -24,9 +47,9 @@ enum struct KVAndPath
 	char path[PLATFORM_MAX_PATH];
 }
 
-methodmap FF2ConfigList_ < ArrayList
+methodmap FF2ConfigList < ArrayList
 {
-	public FF2ConfigList_()
+	public FF2ConfigList()
 	{
 		char path[PLATFORM_MAX_PATH];
 		BuildPath(Path_SM, path, PLATFORM_MAX_PATH, PATH_TO_CFG);
@@ -41,7 +64,7 @@ methodmap FF2ConfigList_ < ArrayList
 		if (!FileList.Length)
 			SetFailState("No boss was found in %s", PATH_TO_CFG);
 
-		return view_as<FF2ConfigList_>(FileList);
+		return view_as<FF2ConfigList>(FileList);
 	}
 	
 	public void FreeAll()
@@ -56,12 +79,12 @@ methodmap FF2ConfigList_ < ArrayList
 
 enum FF2GetKeyType
 {
-	AsStrStr,
-	AsStrNCmp,
-	AsStrCmp
+	AsStrStri,
+	AsStrNCmpi,
+	AsStrCmpi
 }
 
-enum struct Function_t
+enum struct FF2FunctionInfo
 {
 	char str[48];
 	Function fn;
@@ -74,14 +97,14 @@ methodmap FF2AutoProcess < ArrayList
 {
 	public FF2AutoProcess()
 	{
-		return view_as<FF2AutoProcess>(new ArrayList(sizeof(Function_t)));
+		return view_as<FF2AutoProcess>(new ArrayList(sizeof(FF2FunctionInfo)));
 	}
 
 	public void Register(OnProcessCallback callback, const char[] str, FF2GetKeyType type, int extra = 0)
 	{
-		Function_t f;
+		FF2FunctionInfo f;
 
-		strcopy(f.str, sizeof(Function_t::str), str);
+		strcopy(f.str, sizeof(FF2FunctionInfo::str), str);
 		f.fn = callback;
 		f.type = type;
 		f.extra = extra;
@@ -91,24 +114,24 @@ methodmap FF2AutoProcess < ArrayList
 
 	public Function GetFunction(const char[] incoming)
 	{
-		Function_t f;
+		FF2FunctionInfo f;
 		int count = this.Length;
 		for (int i = 0; i < count; i++)
 		{
 			this.GetArray(i, f);
 			switch (f.type)
 			{
-				case AsStrStr:
+				case AsStrStri:
 				{
 					if (StrContains(incoming, f.str) != -1)
 						return f.fn;
 				}
-				case AsStrNCmp:
+				case AsStrNCmpi:
 				{
 					if (!strncmp(incoming, f.str, f.extra, false))
 						return f.fn;
 				}
-				case AsStrCmp:
+				case AsStrCmpi:
 				{
 					if (strcmp(incoming, f.str, false) == f.extra)
 						return f.fn;
@@ -137,9 +160,10 @@ methodmap FF2AutoProcess < ArrayList
 
 enum struct FF2Utility
 {
-	FF2ConfigList_ cfg_list;
+	FF2ConfigList cfg_list;
 	int size_of_list;
 	FF2AutoProcess proc;
+	FF2DefaultsToVSH2 defaults;
 
 	void FreeAll()
 	{
@@ -149,31 +173,35 @@ enum struct FF2Utility
 	}
 }
 
+
 FF2Utility ff2u;
+#include "ff2config_to_vsh2/default_abilities.sp"
+#include "ff2config_to_vsh2/new_slots.sp"
+#include "ff2config_to_vsh2/new_enums.sp"
 
 public void OnPluginStart()
 {
-	ff2u.cfg_list = new FF2ConfigList_();
+	ff2u.cfg_list = new FF2ConfigList();
 	ff2u.proc = new FF2AutoProcess();
 	ff2u.size_of_list = ff2u.cfg_list.Length;
+	
+#if defined FF2_DEFAULTS_TO_VSH2
+	ff2u.defaults = new FF2DefaultsToVSH2();
+	Defaults_OnPluginStart();
+#endif ///	FF2_DEFAULTS_TO_VSH2
+	
+#if defined FF2_USING_NEW_SLOTS
+	Abilities_OnPluginStart();
+#endif	///	FF2_USING_NEW_SLOTS
 
-
-	ff2u.proc.Register(OnProcessAbility, "ability", AsStrNCmp, 7);
-
-	char keys[][] = {
-		"download",
-		"_precache",
-		"sound_",
-		"catch_"
-	};
-
-	for (int i; i < sizeof(keys); i++)
-		ff2u.proc.Register(OnProcessGenerics, keys[i], AsStrStr);
+#if defined FF2_USING_CONFIGMAP_ENUMERATION
+	VSH2Enums_OnPluginStart();
+#endif	///	FF2_USING_CONFIGMAP_ENUMERATION
 
 	CreateTimer(0.1, Schedule_WriteConfigs, 0);
 }
 
-Action Schedule_WriteConfigs(Handle timer, int current)
+static Action Schedule_WriteConfigs(Handle timer, int current)
 {
 	if (ff2u.size_of_list <= current)
 	{
@@ -200,7 +228,7 @@ Action Schedule_WriteConfigs(Handle timer, int current)
 	return Plugin_Continue;
 }
 
-Action Schedule_FinishCharacters(Handle timer)
+static Action Schedule_FinishCharacters(Handle timer)
 {
 	KeyValues kv = new KeyValues("");
 
@@ -220,7 +248,7 @@ Action Schedule_FinishCharacters(Handle timer)
 	delete kv;
 }
 
-void _RecursiveChangeSectionName(KeyValues kv, File hFile, int deep = 0)
+static void _RecursiveChangeSectionName(KeyValues kv, File hFile, int deep = 0)
 {
 	char[] tabs = new char[deep];
 	for(int i; i < deep; i++) tabs[i] = '\t';
@@ -259,7 +287,7 @@ void _RecursiveChangeSectionName(KeyValues kv, File hFile, int deep = 0)
 	} while (kv.GotoNextKey(false));
 }
 
-void _RecursiveProcessSection(KeyValues kv, File hFile, int deep = 0)
+static void _RecursiveProcessSection(KeyValues kv, File hFile, int deep = 0)
 {
 	char[] tabs = new char[deep];
 	for(int i; i < deep; i++) tabs[i] = '\t';
@@ -305,8 +333,11 @@ void _RecursiveProcessSection(KeyValues kv, File hFile, int deep = 0)
 	} while (kv.GotoNextKey(false));
 }
 
-void _RecursiveOpenFile(DirectoryListing Dir, ArrayList& List)
+static void _RecursiveOpenFile(DirectoryListing Dir, ArrayList& List)
 {
+	if (!Dir)
+		return;
+
 	KVAndPath data;
 	FileType ft;
 
@@ -328,6 +359,7 @@ void _RecursiveOpenFile(DirectoryListing Dir, ArrayList& List)
 			case FileType_Directory: 
 			{
 				if (data.path[0] == '.') continue;
+				BuildPath(Path_SM, data.path, sizeof(KVAndPath::path), "%s/%s", PATH_TO_CFG, data.path);
 				_RecursiveOpenFile(OpenDirectory(data.path), List);
 			}
 		}
@@ -336,15 +368,6 @@ void _RecursiveOpenFile(DirectoryListing Dir, ArrayList& List)
 }
 
 
-
-/**
- * Process Ability keys
- *
- * Replace old slot with new bitwise keys
- *
- * "ability*"
- * "Ability*"
- */
 enum FF2CallType_t {
 	CT_NONE          = 0b000000000, /// Inactive, default to CT_RAGE
 	CT_LIFE_LOSS     = 0b000000001,
@@ -358,7 +381,7 @@ enum FF2CallType_t {
 	CT_BOSS_MG       = 0b100000000,
 };
 
-FF2CallType_t Num_To_Slot(int slot)
+stock FF2CallType_t Num_To_Slot(int slot)
 {
 	/**
 	 * -2 - Invalid slot(internally used by FF2 for detecting missing "arg0" argument). Don't use!
@@ -387,96 +410,4 @@ FF2CallType_t Num_To_Slot(int slot)
 		return view_as<FF2CallType_t>(1 << (1 + slot));
 	}
 	}
-}
-
-bool OnProcessAbility(KeyValues kv, File hFile, const char[] section_name)
-{
-	const int bad_results = -999;
-
-	if (kv.GetNum("__update_slot__", 0))
-	{
-		return false;
-	}
-
-	bool is_using_old = false;
-	int val;
-
-	if ((val = kv.GetNum("slot", bad_results)) == bad_results)
-	{
-		if ((val = kv.GetNum("arg0", bad_results)) == bad_results)
-		{
-			kv.SetNum("slot", 10);
-			kv.SetNum("__update_slot__", 1);
-			return false;
-		}
-		else is_using_old = true;
-	}
-
-	char str[32];
-	Format(str, sizeof(str), "%b", view_as<int>(Num_To_Slot(val)));
-
-	kv.SetString(is_using_old ? "arg0" : "slot", str);
-	kv.SetNum("__update_slot__", 1);
-
-	return false;
-}
-
-
-
-/**
- * Process Generics
- *
- * Replace old enumeration with "<enum>" key
- *
- */
-
-bool OnProcessGenerics(KeyValues kv, File hFile, const char[] section_name)
-{
-	if (!strcmp(section_name, "sound_bgm"))
-		return false;
-
-	char[] val = new char[480];
-
-	kv.GotoFirstSubKey(false);
-	hFile.WriteLine("\t\"%s\"\n\t{", section_name);
-
-	if (!strcmp(section_name, "sound_ability") || !strncmp(section_name, "catch_", 6))
-	{
-		char key[8];
-		int count = -1;
-
-		do
-		{
-			kv.GetString(NULL_STRING, val, 480);
-			kv.GetSectionName(key, sizeof(key));
-
-			bool use_key_as_str;
-
-			if (key[0] == 's')		//slot<enum>
-			{
-				use_key_as_str = true;
-				Format(key, sizeof(key), "slot%i", count);
-				Format(val, 32, "%b", view_as<int>(Num_To_Slot(StringToInt(val))));
-			}
-			else if (key[0] == 'v')		//vo<enum>
-			{
-				use_key_as_str = true;
-				Format(key, sizeof(key), "vo%i", count);
-			}
-			else count++;
-
-			hFile.WriteLine("\t\t\"%s\"\t\"%s\"", use_key_as_str ? key : "<enum>", val);
-		} while (kv.GotoNextKey(false));
-	}
-	else 
-	{
-		do
-		{
-			kv.GetString(NULL_STRING, val, 480);
-			hFile.WriteLine("\t\t\"<enum>\"\t\"%s\"", val);
-		} while (kv.GotoNextKey(false));
-	}
-
-	hFile.WriteLine("\t}");
-	return true;
 }
