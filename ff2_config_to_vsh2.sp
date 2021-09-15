@@ -1,19 +1,25 @@
 
 #include <profiler>
 
+//	note: the new VSH2/FF2 way of handling sections like 'abilities' and sounds, etc... will consists of checking  
+//	if the config contains a specific new section 'info', if not then it will assume the plugin wasn't mean to be
+//	an VSH2/FF2 config, so it will internally rewrite some of those sections to match the new ones.
+//	for more check out: [vsh2ff2_sample.cfg](https://github.com/01Pollux/Vs-Saxton-Hale-2/blob/develop/addons/sourcemod/scripting/freaks/vsh2ff2_sample.cfg)
 
 ///	show the time it took to process each config
 #define FF2_COMPILE_WITH_BECHMARK
 
 ///	forcibly change ffbat_defaults and deault_abilities to ff2_vsh2defaults
 ///	yes this also does recreate all of your args with new name just in case
-//#define FF2_DEFAULTS_TO_VSH2
+#define FF2_DEFAULTS_TO_VSH2
 
 ///	set's some enumeration keys with "<enum>"
-#define FF2_USING_CONFIGMAP_ENUMERATION
+///	note: temporarily disabled until it gets updated for the new VSH2 slots handling,
+//#define FF2_USING_CONFIGMAP_ENUMERATION
 
 ///	rewrite the old slots with new one, note: it will not rewrite them if the section has "__update_slot__" key set to "1"
-#define FF2_USING_NEW_SLOTS
+///	note: temporarily disabled until it gets updated for the new VSH2 slots handling,
+//#define FF2_USING_NEW_SLOTS
 
 
 static const char PATH_TO_CFG[] = "configs/freak_fortress_2"
