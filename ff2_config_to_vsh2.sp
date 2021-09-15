@@ -4,7 +4,7 @@
 //	note: the new VSH2/FF2 way of handling sections like 'abilities' and sounds, etc... will consists of checking  
 //	if the config contains a specific new section 'info', if not then it will assume the plugin wasn't mean to be
 //	an VSH2/FF2 config, so it will internally rewrite some of those sections to match the new ones.
-//	for more check out: [vsh2ff2_sample.cfg](https://github.com/01Pollux/Vs-Saxton-Hale-2/blob/develop/addons/sourcemod/scripting/freaks/vsh2ff2_sample.cfg)
+//	for more check out: https://github.com/01Pollux/Vs-Saxton-Hale-2/blob/develop/addons/sourcemod/scripting/freaks/vsh2ff2_sample.cfg
 
 ///	show the time it took to process each config
 #define FF2_COMPILE_WITH_BECHMARK
