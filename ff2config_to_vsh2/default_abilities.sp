@@ -1,40 +1,3 @@
-
-typedef OnProcessDefaults = function void(KeyValues kv);
-
-methodmap FF2DefaultsToVSH2 < FF2AutoProcess
-{
-	public FF2DefaultsToVSH2()
-	{
-		return view_as<FF2DefaultsToVSH2>(new FF2AutoProcess());
-	}
-
-	public void Register(OnProcessDefaults callback, const char[] str, FF2GetKeyType type, int extra = 0)
-	{
-		FF2FunctionInfo f;
-
-		strcopy(f.str, sizeof(FF2FunctionInfo::str), str);
-		f.fn = callback;
-		f.type = type;
-		f.extra = extra;
-
-		this.PushArray(f);
-	}
-
-	public bool ProcessOne(KeyValues kv)
-	{
-		char[] incoming = new char[64];
-		kv.GetString("plugin_name", incoming, 64, "Wat");
-		Function fn = this.GetFunction(incoming);
-
-		if (fn != INVALID_FUNCTION)
-		{
-			Call_StartFunction(null, fn);
-			Call_PushCell(kv);
-			Call_Finish();
-		}
-	}
-}
-
 #if defined FF2_DEFAULTS_TO_VSH2
 
 methodmap FF2SingleAbility < FF2DefaultsToVSH2
@@ -314,20 +277,20 @@ static void rage_stunsg(KeyValues kv)
 			kv.SetString(keys[i], val);
 	}
 	
-	lame = "000";
 	kv.GetString("building", lame, sizeof(lame), "000");
 	
 	char num = lame[0];
 	if (lame[3])
 	{
-		char nums[][] = {
-			{ '1', '4', '5', '7' },
-			{ '2', '3', '6', '7' },
-			{ '3', '5', '6', '7' },
+		lame = "000";
+		char nums[3][] = {
+			"1457",
+			"2367",
+			"3567"
 		};
-		for (int i = 0; i < sizeof(nums); i++)
+		for (int i = 0; i < 3; i++)
 		{
-			for (int j = 0; j < sizeof(nums[]); j++)
+			for (int j = 0; j < 4; j++)
 			{
 				if (num == nums[i][j])
 				{
@@ -336,6 +299,7 @@ static void rage_stunsg(KeyValues kv)
 				}
 			}
 		}
+		kv.SetString("building", lame);
 	}
 }
 

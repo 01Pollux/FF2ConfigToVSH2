@@ -1,4 +1,3 @@
-
 #if defined FF2_USING_NEW_SLOTS
 void Abilities_OnPluginStart()
 {

@@ -7,7 +7,7 @@
 //	for more check out: https://github.com/01Pollux/Vs-Saxton-Hale-2/blob/develop/addons/sourcemod/scripting/freaks/vsh2ff2_sample.cfg
 
 ///	show the time it took to process each config
-#define FF2_COMPILE_WITH_BECHMARK
+//#define FF2_COMPILE_WITH_BECHMARK
 
 ///	forcibly change ffbat_defaults and deault_abilities to ff2_vsh2defaults
 ///	yes this also does recreate all of your args with new name just in case
@@ -164,6 +164,41 @@ methodmap FF2AutoProcess < ArrayList
 	}
 }
 
+typedef OnProcessDefaults = function void(KeyValues kv);
+
+methodmap FF2DefaultsToVSH2 < FF2AutoProcess
+{
+	public FF2DefaultsToVSH2()
+	{
+		return view_as<FF2DefaultsToVSH2>(new FF2AutoProcess());
+	}
+
+	public void Register(OnProcessDefaults callback, const char[] str, FF2GetKeyType type, int extra = 0)
+	{
+		FF2FunctionInfo f;
+
+		strcopy(f.str, sizeof(FF2FunctionInfo::str), str);
+		f.fn = callback;
+		f.type = type;
+		f.extra = extra;
+
+		this.PushArray(f);
+	}
+
+	public bool ProcessOne(KeyValues kv)
+	{
+		char[] incoming = new char[64];
+		kv.GetString("plugin_name", incoming, 64, "Wat");
+		Function fn = this.GetFunction(incoming);
+
+		if (fn != INVALID_FUNCTION)
+		{
+			Call_StartFunction(null, fn);
+			Call_PushCell(kv);
+			Call_Finish();
+		}
+	}
+}
 
 enum struct FF2Utility
 {
@@ -253,6 +288,8 @@ static Action Schedule_FinishCharacters(Handle timer)
 
 	hFile.Close();
 	delete kv;
+
+	return Plugin_Continue;
 }
 
 static void _RecursiveChangeSectionName(KeyValues kv, File hFile, int deep = 0)
